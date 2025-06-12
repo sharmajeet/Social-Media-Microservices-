@@ -25,7 +25,7 @@ const createPost = async (req, res) => {
     const { content, mediaIds } = req.body;
 
     const post = new Post({
-      user: req.user.userId, // assuming userId is set in the request by the auth middleware
+      user: req.user.userId, 
       content,
       mediaIds
     });

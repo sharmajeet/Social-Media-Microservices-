@@ -34,7 +34,7 @@ const uploadMediaToCloudinary = async (file) => {
             resolve(result);
           }
         }
-      ).end(file.buffer); 
+      ).end(file.buffer);
     });
 
   } catch (error) {
@@ -43,6 +43,54 @@ const uploadMediaToCloudinary = async (file) => {
   }
 };
 
+const deleteMediaFromCloudinary = async (publicId) => {
+  try {
+    if (!publicId) {
+      throw new Error('No public ID provided for deletion');
+    }
+
+    logger.info(`Starting Cloudinary deletion for: ${publicId}`);
+
+    return new Promise((resolve, reject) => {
+      cloudinary.uploader.destroy(publicId, (error, result) => {
+        if (error) {
+          logger.error('Cloudinary deletion failed:', error);
+          reject(error);
+        } else {
+          logger.info(`Cloudinary deletion successful: ${result.result}`);
+          resolve(result);
+        }
+      });
+    });
+
+  } catch (error) {
+    logger.error('Error in deleteMediaFromCloudinary:', error);
+    throw error;
+  }
+}
+
+const updateMediaInCloudinary = async (publicId, file) => {
+  try {
+    if (!publicId || !file || !file.buffer) {
+      throw new Error('Invalid parameters for update');
+    }
+
+    logger.info(`Starting Cloudinary update for: ${publicId}`);
+
+    // First delete the existing media
+    await deleteMediaFromCloudinary(publicId);
+
+    // Then upload the new media
+    return uploadMediaToCloudinary(file);
+
+  } catch (error) {
+    logger.error('Error in updateMediaInCloudinary:', error);
+    throw error;
+  }
+}
+
 module.exports = {
-  uploadMediaToCloudinary
+  uploadMediaToCloudinary,
+  deleteMediaFromCloudinary,
+  updateMediaInCloudinary
 };
