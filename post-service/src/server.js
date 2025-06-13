@@ -11,7 +11,17 @@ const { connect } = require('./db/connection');
 const { RateLimiterRedis } = require('rate-limiter-flexible');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3002;
+
+const redisClient = new Redis(process.env.REDIS_URL || 'redis://redis:6379');
+
+redisClient.on('connect', () => {
+    logger.info('Connected to Redis successfully');
+});
+
+redisClient.on('error', (err) => {
+    logger.error('Redis connection error:', err);
+});
 
 // Middlewares
 app.use(helmet());
@@ -33,8 +43,7 @@ app.use((req, res, next) => {
   next();
 });
 
-// Redis connection
-const redisClient = new Redis(process.env.REDIS_URL);
+
 
 // Rate limiting middleware
 const rateLimiter = new RateLimiterRedis({

@@ -7,13 +7,21 @@ const { rateLimit } = require("express-rate-limit");
 const { RedisStore } = require("rate-limit-redis");
 const logger = require("../src/utils/logger");
 const proxy = require("express-http-proxy");
-const errorHandler = require("../../identity-service/src/middlewares/errorHandler");
+const errorHandler = require("./middlewares/errorHandler")
 const { authenticateRequest } = require("./middlewares/authMiddleware");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-const redisClient = new Redis(process.env.REDIS_URL);
+const redisClient = new Redis(process.env.REDIS_URL || 'redis://redis:6379');
+
+redisClient.on('connect', () => {
+    logger.info('Connected to Redis successfully');
+});
+
+redisClient.on('error', (err) => {
+    logger.error('Redis connection error:', err);
+});
 
 app.use(helmet());
 app.use(cors());

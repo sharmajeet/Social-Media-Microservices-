@@ -1,5 +1,4 @@
 version: '3.8'
-
 services:
   api-gateway:
     build:
@@ -16,15 +15,24 @@ services:
       - REDIS_URL=redis://redis:6379
       - JWT_SECRET=${JWT_SECRET}
     depends_on:
+      - redis
       - identity-service
       - post-service
       - media-service
       - search-service
-      - redis
     networks:
       - microservices-network
     env_file:
       - ./api-gateway/.env
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   identity-service:
     build:
@@ -43,6 +51,15 @@ services:
       - microservices-network
     env_file:
       - ./identity-service/.env
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   post-service:
     build:
@@ -60,6 +77,15 @@ services:
       - microservices-network
     env_file:
       - ./post-service/.env
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   media-service:
     build:
@@ -77,6 +103,15 @@ services:
       - microservices-network
     env_file:
       - ./media-service/.env
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   search-service:
     build:
@@ -94,6 +129,15 @@ services:
       - microservices-network
     env_file:
       - ./search-service/.env
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   redis:
     image: redis:7-alpine
@@ -103,6 +147,11 @@ services:
       - microservices-network
     volumes:
       - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
 networks:
   microservices-network:

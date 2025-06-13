@@ -2,7 +2,7 @@ const logger = require('../utils/logger');
 const Post = require('../models/Post');
 const { validateNewPost } = require('../utils/validator');
 const Redis = require('ioredis');
-const redisClient = new Redis('redis://localhost:6379');
+const redisClient = new Redis(process.env.REDIS_URL || 'redis://redis:6379');
 
 
 //invalidate the cache when a new post is created
@@ -100,7 +100,7 @@ const getPost  =async(req,res) =>{
     }
 
     //now store the post in cache
-    await req.redisClient.setex(cacheKey, 600, JSON.stringify(result));
+    await req.redisClient.setex(cacheKey, 600, JSON.stringify(singlePostDetailsById)); // CHANGED: Fixed variable name
 
     logger.info('Post fetched successfully:', singlePostDetailsById);
     res.status(200).json({ success: true, message: 'Post fetched successfully', data: singlePostDetailsById });
