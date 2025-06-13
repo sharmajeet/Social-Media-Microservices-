@@ -2,7 +2,7 @@ const express = require("express");
 const multer = require("multer");
 
 const logger = require("../utils/logger");
-const { uploadMedia, getAllUploadedMedia, deleteMedia,updateMedia } = require("../controllers/media-controller");
+const { uploadMedia, getAllUploadedMedia, deleteMedia,updateMedia, getMediaById } = require("../controllers/media-controller");
 const { authenticateRequest } = require("../middlewares/auth-middleware");
 
 const router = express.Router();
@@ -35,6 +35,9 @@ router.get("/all-media", authenticateRequest, getAllUploadedMedia);
 router.delete("/delete-media/:mediaId", authenticateRequest, deleteMedia);
 
 router.put("/update-media/:mediaId", authenticateRequest, upload, updateMedia);
+
+//To-Do - this is indetail api-response we have to use this only for the Admins only
+router.get("/get-media/:mediaId", authenticateRequest , getMediaById)
 
 
 module.exports = router;

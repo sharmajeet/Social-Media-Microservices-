@@ -69,6 +69,7 @@ const deleteMediaFromCloudinary = async (publicId) => {
   }
 }
 
+// no need of this method as we can use the delete and upload methods separately
 const updateMediaInCloudinary = async (publicId, file) => {
   try {
     if (!publicId || !file || !file.buffer) {
@@ -89,8 +90,30 @@ const updateMediaInCloudinary = async (publicId, file) => {
   }
 }
 
+const getMediaByIdfromCloudinary = async (publicId, resourceType = 'image') => {
+  try {
+    // Validate publicId
+    if (!publicId || typeof publicId !== 'string' || publicId.trim() === '') {
+      throw new Error('Invalid or missing public ID for retrieval');
+    }
+
+    logger.info(`Retrieving media from Cloudinary: ${publicId}`);
+
+    // Use await with cloudinary.api.resource
+    const result = await cloudinary.api.resource(publicId, { resource_type: resourceType });
+
+    logger.info(`Cloudinary resource retrieved successfully: ${result.public_id}`);
+    return result;
+
+  } catch (error) {
+    logger.error(`Error in getMediaByIdfromCloudinary: ${error.message}`, error);
+    throw new Error(`Failed to retrieve media: ${error.message}`);
+  }
+};
+
 module.exports = {
   uploadMediaToCloudinary,
   deleteMediaFromCloudinary,
-  updateMediaInCloudinary
+  updateMediaInCloudinary,
+  getMediaByIdfromCloudinary
 };

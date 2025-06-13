@@ -1,5 +1,5 @@
 const logger = require("../utils/logger");
-const { uploadMediaToCloudinary, deleteMediaFromCloudinary } = require("../utils/cloudinary");
+const { uploadMediaToCloudinary, deleteMediaFromCloudinary, getMediaByIdfromCloudinary } = require("../utils/cloudinary");
 const Media = require("../models/Media"); // ADD THIS LINE
 
 const uploadMedia = async (req, res) => {
@@ -176,9 +176,53 @@ const updateMedia = async (req, res) => {
     });
   }
 }
+
+const getMediaById = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const { mediaId } = req.params;
+
+    const media = await Media.findOne({ _id: mediaId, userId });
+    if (!media) {
+      logger.warn("Media not found or does not belong to the user");
+      return res.status(404).json({
+        success: false,
+        message: "Media not found or does not belong to the user",
+      });
+    }
+
+    // Fetch media details from Cloudinary
+    const cloudinaryMedia = await getMediaByIdfromCloudinary(media.publicId);
+    if (!cloudinaryMedia) {
+      logger.error("Error fetching media from Cloudinary");
+      return res.status(500).json({
+        success: false,
+        message: "Error fetching media from Cloudinary",
+      });
+    }
+
+    logger.info(`Fetched media with ID ${mediaId} successfully for user ${userId}`);
+    return res.status(200).json({
+      success: true,
+      message: "Media fetched successfully",
+      media: {
+        ...media.toObject(),
+        cloudinaryDetails: cloudinaryMedia,
+      },
+    });
+  }
+  catch (error) {
+    logger.error("Error while fetching media by ID:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error while fetching media by ID",
+    });
+  }
+}
 module.exports = {
   uploadMedia,
   getAllUploadedMedia,
   updateMedia,
-  deleteMedia
+  deleteMedia,
+  getMediaById
 };
