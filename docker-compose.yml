@@ -1,0 +1,112 @@
+version: '3.8'
+
+services:
+  api-gateway:
+    build:
+      context: ./api-gateway
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - NODE_ENV=development
+      - IDENTITY_SERVICE_URL=http://identity-service:3001
+      - POST_SERVICE_URL=http://post-service:3002
+      - MEDIA_SERVICE_URL=http://media-service:3003
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=${JWT_SECRET}
+    depends_on:
+      - identity-service
+      - post-service
+      - media-service
+      - search-service
+      - redis
+    networks:
+      - microservices-network
+    env_file:
+      - ./api-gateway/.env
+
+  identity-service:
+    build:
+      context: ./identity-service
+      dockerfile: Dockerfile
+    ports:
+      - "3001:3001"
+    environment:
+      - PORT=3001
+      - NODE_ENV=development
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=${JWT_SECRET}
+    depends_on:
+      - redis
+    networks:
+      - microservices-network
+    env_file:
+      - ./identity-service/.env
+
+  post-service:
+    build:
+      context: ./post-service
+      dockerfile: Dockerfile
+    ports:
+      - "3002:3002"
+    environment:
+      - PORT=3002
+      - NODE_ENV=development
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - redis
+    networks:
+      - microservices-network
+    env_file:
+      - ./post-service/.env
+
+  media-service:
+    build:
+      context: ./media-service
+      dockerfile: Dockerfile
+    ports:
+      - "3003:3003"
+    environment:
+      - PORT=3003
+      - NODE_ENV=development
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - redis
+    networks:
+      - microservices-network
+    env_file:
+      - ./media-service/.env
+
+  search-service:
+    build:
+      context: ./search-service
+      dockerfile: Dockerfile
+    ports:
+      - "3004:3004"
+    environment:
+      - PORT=3004
+      - NODE_ENV=development
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - redis
+    networks:
+      - microservices-network
+    env_file:
+      - ./search-service/.env
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    networks:
+      - microservices-network
+    volumes:
+      - redis-data:/data
+
+networks:
+  microservices-network:
+    driver: bridge
+
+volumes:
+  redis-data:
