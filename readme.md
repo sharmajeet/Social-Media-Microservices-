@@ -1,6 +1,7 @@
 # Social Media Microservices Backend
+<!-- banner -->
+<img src="https://i.pinimg.com/1200x/8d/e8/c8/8de8c8c1edaa93c8c85b6dc3b388d67e.jpg" height="300"  width="1200"/>
 
-![Project Banner](./assets/banner/banner.jpg)  
 *Building the Future of Social Media with Microservices*
 
 Welcome to the **Social Media Microservices Backend**! This project is a scalable, microservices-based backend for a social media platform, built with Node.js and orchestrated using Docker Compose. It consists of multiple services that work together to provide a robust backend system, including user authentication, post management, media handling, and search functionality.
