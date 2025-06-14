@@ -9,6 +9,7 @@ const logger = require('./utils/logger');
 const errorHandler = require('./middlewares/errorHandler');
 const { connect } = require('./db/connection');
 const { RateLimiterRedis } = require('rate-limiter-flexible');
+const { connectRabbitMQ } = require('./utils/rabbitmq');
 
 const app = express();
 const PORT = process.env.PORT || 3002;
@@ -16,11 +17,11 @@ const PORT = process.env.PORT || 3002;
 const redisClient = new Redis(process.env.REDIS_URL || 'redis://redis:6379');
 
 redisClient.on('connect', () => {
-    logger.info('Connected to Redis successfully');
+  logger.info('Connected to Redis successfully');
 });
 
 redisClient.on('error', (err) => {
-    logger.error('Redis connection error:', err);
+  logger.error('Redis connection error:', err);
 });
 
 // Middlewares
@@ -71,11 +72,21 @@ app.use('/api/posts', (req, res, next) => {
 // Error handler
 app.use(errorHandler);
 
-// Start server
-app.listen(PORT, () => {
-  logger.info(`Post Service is running on port ${PORT}`);
-  console.log(`Post Service is running on port ${PORT}`);
-});
+async function startServer() {
+  try {
+    await connectRabbitMQ();
+    // Start server
+    app.listen(PORT, () => {
+      logger.info(`Post Service is running on port ${PORT}`);
+      console.log(`Post Service is running on port ${PORT}`);
+    });
+  } catch (error) {
+    logger.error('Error starting Post Service:', error);
+    process.exit(1);
+  }
+}
+
+startServer();
 
 // Unhandled Promise Rejection Handling
 process.on('unhandledRejection', (reason, promise) => {

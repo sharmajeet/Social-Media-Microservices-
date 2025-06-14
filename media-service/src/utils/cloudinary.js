@@ -49,15 +49,13 @@ const deleteMediaFromCloudinary = async (publicId) => {
       throw new Error('No public ID provided for deletion');
     }
 
-    logger.info(`Starting Cloudinary deletion for: ${publicId}`);
-
     return new Promise((resolve, reject) => {
       cloudinary.uploader.destroy(publicId, (error, result) => {
         if (error) {
           logger.error('Cloudinary deletion failed:', error);
           reject(error);
         } else {
-          logger.info(`Cloudinary deletion successful: ${result.result}`);
+          logger.info(`Media Deletion From Cloudinary is successful: ${result.result}`);
           resolve(result);
         }
       });

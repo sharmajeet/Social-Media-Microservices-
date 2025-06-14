@@ -2,13 +2,14 @@ const logger = require('../utils/logger');
 const Post = require('../models/Post');
 const { validateNewPost } = require('../utils/validator');
 const Redis = require('ioredis');
+const { publishEvent } = require('../utils/rabbitmq');
 const redisClient = new Redis(process.env.REDIS_URL || 'redis://redis:6379');
 
 
 //invalidate the cache when a new post is created
-async function invalidateCacheOnPostCreation(req,input) {
- const keys = await redisClient.keys('posts:*');
-  if(keys.length > 0) {
+async function invalidateCacheOnPostCreation(req, input) {
+  const keys = await redisClient.keys('posts:*');
+  if (keys.length > 0) {
     await req.redisClient.del(keys);
   }
 }
@@ -25,7 +26,7 @@ const createPost = async (req, res) => {
     const { content, mediaIds } = req.body;
 
     const post = new Post({
-      user: req.user.userId, 
+      user: req.user.userId,
       content,
       mediaIds
     });
@@ -43,53 +44,53 @@ const createPost = async (req, res) => {
 };
 
 const getAllPosts = async (req, res) => {
-try{
-  const page = parseInt(req.query.page) || 1;
-  const limit = parseInt(req.query.limit) || 10;
-  const startIndex = (page - 1) * limit;
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const startIndex = (page - 1) * limit;
 
-  const cacheKey = `posts:${page}:${limit}`;
-  const cachedPosts = await redisClient.get(cacheKey);
+    const cacheKey = `posts:${page}:${limit}`;
+    const cachedPosts = await redisClient.get(cacheKey);
 
-  if (cachedPosts) {
-    logger.info('Fetching posts from cache');
-    return res.json(JSON.parse(cachedPosts));
-  }
+    if (cachedPosts) {
+      logger.info('Fetching posts from cache');
+      return res.json(JSON.parse(cachedPosts));
+    }
 
-  //if not in cache, fetch from database
-  const posts = await Post.find({}).sort({ createdAt: -1 })
-  .skip(startIndex)
-  .limit(limit);
+    //if not in cache, fetch from database
+    const posts = await Post.find({}).sort({ createdAt: -1 })
+      .skip(startIndex)
+      .limit(limit);
 
-  const totalNumberOfPosts = await Post.countDocuments();
+    const totalNumberOfPosts = await Post.countDocuments();
 
-  const result = {
-    posts,
-    currentPage: page,
-    totalPages: Math.ceil(totalNumberOfPosts / limit),
-    totalPosts: totalNumberOfPosts
-  }
+    const result = {
+      posts,
+      currentPage: page,
+      totalPages: Math.ceil(totalNumberOfPosts / limit),
+      totalPosts: totalNumberOfPosts
+    }
 
-  //now store the result in cache
-  await req.redisClient.setex(cacheKey, 600, JSON.stringify(result));
-  logger.info('Posts fetched successfully:');
+    //now store the result in cache
+    await req.redisClient.setex(cacheKey, 600, JSON.stringify(result));
+    logger.info('Posts fetched successfully:');
 
-  res.status(200).json({ success: true, message: 'Posts fetched successfully', data: result });
+    res.status(200).json({ success: true, message: 'Posts fetched successfully', data: result });
 
-}catch (error) {
+  } catch (error) {
     logger.error('Error while fetching posts:', error);
     res.status(500).json({ success: false, message: 'Error while fetching posts' });
   }
 
 }
 
-const getPost  =async(req,res) =>{
-  try{
+const getPost = async (req, res) => {
+  try {
     const postId = req.params.id;
     const cacheKey = `post:${postId}`;
     const cachedPost = await redisClient.get(cacheKey);
 
-    if(cachedPost) {
+    if (cachedPost) {
       return res.status(200).json({ success: true, message: 'Post fetched successfully', data: JSON.parse(cachedPost) });
     }
 
@@ -106,14 +107,14 @@ const getPost  =async(req,res) =>{
     res.status(200).json({ success: true, message: 'Post fetched successfully', data: singlePostDetailsById });
 
 
-  }catch(error){
+  } catch (error) {
     logger.error('Error while fetching post:', error);
     res.status(500).json({ success: false, message: 'Error while fetching post' });
-}
+  }
 }
 
 const deletePost = async (req, res) => {
-  try{
+  try {
     const postId = req.params.id;
     const post = await Post.findById(postId);
     if (!post) {
@@ -122,9 +123,19 @@ const deletePost = async (req, res) => {
     if (post.user.toString() !== req.user.userId) {
       return res.status(403).json({ success: false, message: 'You are not authorized to delete this post' });
     }
-    await post.deleteOne();
+
+    //use the published event 
+    await publishEvent('post.deleted', {
+      postId: post._id.toString(),
+      userId: req.user.userId,
+      mediaIds: post.mediaIds || []
+    });
+
+
+    await post.invalidateCacheOnPostCreation(req, postId);
     //invalidate the cache for this post
-    await redisClient.del(`post:${postId}`);
+    // await redisClient.del(`post:${postId}`);
+    await post.deleteOne();
     logger.info('Post deleted successfully:', postId);
     res.status(200).json({ success: true, message: 'Post deleted successfully' });
 
