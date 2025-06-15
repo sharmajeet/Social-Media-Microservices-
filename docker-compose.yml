@@ -1,11 +1,43 @@
 version: '3.8'
+
 services:
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    ports:
+      - "5672:5672"  # AMQP port (default)
+      - "15672:15672"  # Management UI port (default)
+    networks:
+      - microservices-network
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "status"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  rabbitscout:
+    image: ghcr.io/ralve-org/rabbitscout:latest
+    ports:
+      - "3006:3000"  # Changed to 3006 to avoid conflict; RabbitScout default port inside container is 3000
+    environment:
+      - NEXT_PUBLIC_RABBITMQ_HOST=rabbitmq
+      - NEXT_PUBLIC_RABBITMQ_PORT=15672
+      - NEXT_PUBLIC_RABBITMQ_VHOST=/
+      - RABBITMQ_USERNAME=guest
+      - RABBITMQ_PASSWORD=guest
+      - NEXT_PUBLIC_API_URL=http://localhost:3006  # Updated to match the new host port (3006)
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - microservices-network
+    restart: unless-stopped
+
   api-gateway:
     build:
       context: ./api-gateway
       dockerfile: Dockerfile
     ports:
-      - "3000:3000"
+      - "3007:3000"
     environment:
       - PORT=3000
       - NODE_ENV=development
@@ -13,13 +45,18 @@ services:
       - POST_SERVICE_URL=http://post-service:3002
       - MEDIA_SERVICE_URL=http://media-service:3003
       - REDIS_URL=redis://redis:6379
-      - JWT_SECRET=${JWT_SECRET}
+      - JWT_SECRET=${JWT_SECRET:-your_jwt_secret_here}
     depends_on:
-      - redis
-      - identity-service
-      - post-service
-      - media-service
-      - search-service
+      redis:
+        condition: service_healthy
+      identity-service:
+        condition: service_started
+      post-service:
+        condition: service_started
+      media-service:
+        condition: service_started
+      search-service:
+        condition: service_started
     networks:
       - microservices-network
     env_file:
@@ -42,13 +79,12 @@ services:
       - "3001:3001"
     environment:
       - PORT=3001
-      # change NODE_ENV to production for production deployments
       - NODE_ENV=development
-      # - NODE_ENV=production
       - REDIS_URL=redis://redis:6379
-      - JWT_SECRET=${JWT_SECRET}
+      - JWT_SECRET=${JWT_SECRET:-your_jwt_secret_here}
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
     networks:
       - microservices-network
     env_file:
@@ -73,8 +109,12 @@ services:
       - PORT=3002
       - NODE_ENV=development
       - REDIS_URL=redis://redis:6379
+      - RABBITMQ_URL=amqp://rabbitmq:5672
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     networks:
       - microservices-network
     env_file:
@@ -99,8 +139,12 @@ services:
       - PORT=3003
       - NODE_ENV=development
       - REDIS_URL=redis://redis:6379
+      - RABBITMQ_URL=amqp://rabbitmq:5672
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     networks:
       - microservices-network
     env_file:
@@ -126,7 +170,8 @@ services:
       - NODE_ENV=development
       - REDIS_URL=redis://redis:6379
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
     networks:
       - microservices-network
     env_file:
