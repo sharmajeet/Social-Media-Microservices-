@@ -7,6 +7,9 @@ const logger = require('./utils/logger');
 const mediaRoutes = require('./routes/media-routes');
 const errorHandler = require('./middlewares/errorHandler');
 const { connect } = require('./db/connection');
+const { connectRabbitMQ } = require('./utils/rabbitmq');
+const { consumeEvent } = require('../../post-service/src/utils/rabbitmq');
+const { handlePostDeleted } = require('./eventHandlers/media-event-handler');
 
 const app = express();
 const PORT = process.env.PORT;
@@ -36,10 +39,27 @@ app.use((req,res,next)  => {
 //rotes
 app.use('/api/media', mediaRoutes);
 
+async function startServer() {
+  try {
+    await connectRabbitMQ();
 
-app.listen(process.env.PORT, () => {
-    logger.info(`Media Service is running on port ${process.env.PORT || 3003}`);
-});
+    //******** Here we have to consume all the events pass theough RabbitMq ***********//
+    await consumeEvent('post.deleted',handlePostDeleted);
+    // Start server
+    app.listen(PORT, () => {
+      logger.info(`Media Service is running on port ${PORT}`);
+    });
+  } catch (error) {
+    logger.error('Error starting Media Service:', error);
+    process.exit(1);
+  }
+}
+
+startServer();
+
+// app.listen(process.env.PORT, () => {
+//     logger.info(`Media Service is running on port ${process.env.PORT || 3003}`);
+// });
 
 //unhandled promise rejections
 process.on('unhandledRejection', (reason,promis) => {

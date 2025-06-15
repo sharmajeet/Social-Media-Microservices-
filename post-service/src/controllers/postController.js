@@ -2,6 +2,7 @@ const logger = require('../utils/logger');
 const Post = require('../models/Post');
 const { validateNewPost } = require('../utils/validator');
 const Redis = require('ioredis');
+const { publishEvent } = require('../utils/rabbitmq');
 // const { publishEvent } = require('../utils/rabbitmq');
 const redisClient = new Redis(process.env.REDIS_URL || 'redis://redis:6379');
 
@@ -124,15 +125,15 @@ const deletePost = async (req, res) => {
       return res.status(403).json({ success: false, message: 'You are not authorized to delete this post' });
     }
 
-    // //use the published event 
-    // await publishEvent('post.deleted', {
-    //   postId: post._id.toString(),
-    //   userId: req.user.userId,
-    //   mediaIds: post.mediaIds || []
-    // });
+    //use the published event 
+    await publishEvent('post.deleted', {
+      postId: post._id.toString(),
+      userId: req.user.userId,
+      mediaIds: post.mediaIds || []
+    });
 
 
-    await post.invalidateCacheOnPostCreation(req, postId);
+    await invalidateCacheOnPostCreation(req, postId);
     //invalidate the cache for this post
     // await redisClient.del(`post:${postId}`);
     await post.deleteOne();
