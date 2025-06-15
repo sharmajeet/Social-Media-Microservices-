@@ -3,10 +3,8 @@ const { uploadMediaToCloudinary, deleteMediaFromCloudinary, getMediaByIdfromClou
 const Media = require("../models/Media"); // ADD THIS LINE
 
 const uploadMedia = async (req, res) => {
-  console.log(req.file, "Received media upload request");
   logger.info("Received media upload request");
   try {
-    console.log(req.file, "Received media upload request");
     if (!req.file) {
       logger.warn("No file uploaded");
       return res

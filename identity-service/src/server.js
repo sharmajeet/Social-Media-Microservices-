@@ -87,7 +87,6 @@ app.use(errorHandler);
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
     logger.info(`Identity Service is running on port ${PORT}`);
-    console.log(`Identity Service is running on port ${PORT}`);
 });
 
 //unhandled promise rejections

@@ -39,7 +39,6 @@ app.use('/api/media', mediaRoutes);
 
 app.listen(process.env.PORT, () => {
     logger.info(`Media Service is running on port ${process.env.PORT || 3003}`);
-    console.log(`Media Service is running on port ${process.env.PORT || 3003}`);
 });
 
 //unhandled promise rejections

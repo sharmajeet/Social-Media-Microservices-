@@ -72,27 +72,25 @@ app.use('/api/posts', (req, res, next) => {
 // Error handler
 app.use(errorHandler);
 
-// async function startServer() {
-//   try {
-//     await connectRabbitMQ();
-//     // Start server
-//     app.listen(PORT, () => {
-//       logger.info(`Post Service is running on port ${PORT}`);
-//       console.log(`Post Service is running on port ${PORT}`);
-//     });
-//   } catch (error) {
-//     logger.error('Error starting Post Service:', error);
-//     process.exit(1);
-//   }
-// }
-
-// startServer();
-
-  // Start server
+async function startServer() {
+  try {
+    await connectRabbitMQ();
+    // Start server
     app.listen(PORT, () => {
       logger.info(`Post Service is running on port ${PORT}`);
-      console.log(`Post Service is running on port ${PORT}`);
     });
+  } catch (error) {
+    logger.error('Error starting Post Service:', error);
+    process.exit(1);
+  }
+}
+
+startServer();
+
+  // // Start server
+  //   app.listen(PORT, () => {
+  //     logger.info(`Post Service is running on port ${PORT}`);
+  //   });
 
 // Unhandled Promise Rejection Handling
 process.on('unhandledRejection', (reason, promise) => {
