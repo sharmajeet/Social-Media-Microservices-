@@ -1,14 +1,16 @@
 # Social Media Microservices Backend
+
 <!-- banner -->
 <img src="https://i.pinimg.com/1200x/8d/e8/c8/8de8c8c1edaa93c8c85b6dc3b388d67e.jpg" height="300"  width="1200"/>
 
-*Building the Future of Social Media with Microservices*
+_Building the Future of Social Media with Microservices_
 
 Welcome to the **Social Media Microservices Backend**! This project is a scalable, microservices-based backend for a social media platform, built with Node.js and orchestrated using Docker Compose. It consists of multiple services that work together to provide a robust backend system, including user authentication, post management, media handling, and search functionality.
 
 ---
 
 ## 🌟 Features
+
 - **Microservices Architecture**: Modular services for scalability and maintainability.
 - **API Gateway**: Centralized entry point for routing client requests.
 - **Authentication**: Secure user authentication and authorization with JWT.
@@ -16,12 +18,16 @@ Welcome to the **Social Media Microservices Backend**! This project is a scalabl
 - **Media Handling**: Upload and retrieve media files.
 - **Search Functionality**: Search for posts and users efficiently.
 - **Redis Caching**: Improve performance with Redis caching.
+- **Message Queueing**: Asynchronous communication between services using RabbitMQ.
+- **Queue Monitoring**: Monitor RabbitMQ queues with RabbitScout.
 - **Dockerized**: Easy setup and deployment using Docker Compose.
 
 ---
 
 ## 🏗️ Architecture Overview
+
 The project is structured as a microservices architecture, with the following services:
+
 - **`api-gateway`**: Routes client requests to appropriate services (port `3000`).
 - **`identity-service`**: Handles user authentication and authorization (port `3001`).
 - **`post-service`**: Manages user posts (port `3002`).
@@ -34,7 +40,9 @@ All services communicate over a Docker network (`microservices-network`) and use
 ---
 
 ## 📋 Prerequisites
+
 Before you begin, ensure you have the following installed:
+
 - [Docker](https://docs.docker.com/get-docker/) (v20.10 or later)
 - [Docker Compose](https://docs.docker.com/compose/install/) (v2.0 or later)
 - [Node.js](https://nodejs.org/) (v18.x, for local development outside Docker)
@@ -43,7 +51,12 @@ Before you begin, ensure you have the following installed:
 
 ---
 
+## 📋 Project Workflow
+
+<img src="./assets/banner/social-media-backend-workflow.png"  width="1200"/>
+
 ## 📂 Project Structure
+
 ```
 Social-Media-Microservices-/
 ├── api-gateway/           # API Gateway service
@@ -82,10 +95,12 @@ Social-Media-Microservices-/
 ## 🚀 Getting Started
 
 ### 1. Clone the Repository
+
 ```bash
 git clone https://github.com/sharmajeet/Social-Media-Microservices-.git
 cd Social-Media-Microservices-
 ```
+
 > **Note**: If you encounter authentication issues, use a Personal Access Token (PAT) or SSH. See GitHub Authentication for details.
 
 ### 2. Set Up Environment Variables
@@ -93,6 +108,7 @@ cd Social-Media-Microservices-
 Each service requires a `.env` file in its directory. Create these files based on the examples below:
 
 **api-gateway/.env**
+
 ```env
 PORT=3000
 NODE_ENV=development
@@ -105,6 +121,7 @@ MONGO_URI=mongodb+srv://<username>:<password>@cluster0.1dbyuhf.mongodb.net/<dbna
 ```
 
 **identity-service/.env**
+
 ```env
 PORT=3001
 NODE_ENV=development
@@ -114,6 +131,7 @@ MONGO_URI=mongodb+srv://<username>:<password>@cluster0.1dbyuhf.mongodb.net/<dbna
 ```
 
 **post-service/.env**
+
 ```env
 PORT=3002
 NODE_ENV=development
@@ -122,6 +140,7 @@ MONGO_URI=mongodb+srv://<username>:<password>@cluster0.1dbyuhf.mongodb.net/<dbna
 ```
 
 **media-service/.env**
+
 ```env
 PORT=3003
 NODE_ENV=development
@@ -130,6 +149,7 @@ MONGO_URI=mongodb+srv://<username>:<password>@cluster0.1dbyuhf.mongodb.net/<dbna
 ```
 
 **search-service/.env**
+
 ```env
 PORT=3004
 NODE_ENV=development
@@ -142,12 +162,15 @@ MONGO_URI=mongodb+srv://<username>:<password>@cluster0.1dbyuhf.mongodb.net/<dbna
 ---
 
 ### 3. Build and Run with Docker
+
 ```bash
 docker-compose up --build
 ```
 
 ### 4. Verify Services
+
 Check the logs for successful startup:
+
 ```
 api-gateway: info: API Gateway is running on port 3000
 identity-service: info: Identity Service is running on port 3001
@@ -158,6 +181,7 @@ redis: Ready to accept connections tcp
 ```
 
 ### 5. Stop the Services
+
 ```bash
 docker-compose down
 ```
@@ -166,13 +190,15 @@ docker-compose down
 
 ## 🔗 Accessing the Services
 
-| Service           | URL                       | Port  |
-|-------------------|----------------------------|--------|
-| API Gateway       | http://localhost:3000      | 3000   |
-| Identity Service  | http://localhost:3001      | 3001   |
-| Post Service      | http://localhost:3002      | 3002   |
-| Media Service     | http://localhost:3003      | 3003   |
-| Search Service    | http://localhost:3004      | 3004   |
+| Service          | URL                    | Port  |
+| ---------------- | ---------------------- | ----- |
+| API Gateway      | http://localhost:3000  | 3000  |
+| Identity Service | http://localhost:3001  | 3001  |
+| Post Service     | http://localhost:3002  | 3002  |
+| Media Service    | http://localhost:3003  | 3003  |
+| Search Service   | http://localhost:3004  | 3004  |
+| RabbitMQ         | http://localhost:15672 | 15672 |
+| rabbitscout      | http://localhost:3006  | 3006  |
 
 > Use the **API Gateway** as the entry point. Other services are accessible for testing.
 
@@ -255,25 +281,32 @@ git remote set-url origin git@github.com:sharmajeet/Social-Media-Microservices-.
 --- -->
 
 ## 🤝 Contributing
+
 1. Fork the repository.
 2. Create a feature branch:
+
 ```bash
 git checkout -b feature/your-feature
 ```
+
 3. Commit your changes:
+
 ```bash
 git commit -m "Add your feature"
 ```
+
 4. Push and open a pull request.
 
 ---
 
 ## 📄 License
+
 This project is licensed under the MIT License. See the `LICENSE` file for details.
 
 ---
 
 ## 📧 Contact
+
 For questions or support, reach out to **sharmajeet**.
 
 ⭐ **If you find this project helpful, please give it a star on GitHub!**
