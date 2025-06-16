@@ -8,7 +8,7 @@ const mediaRoutes = require('./routes/media-routes');
 const errorHandler = require('./middlewares/errorHandler');
 const { connect } = require('./db/connection');
 const { connectRabbitMQ } = require('./utils/rabbitmq');
-const { consumeEvent } = require('../../post-service/src/utils/rabbitmq');
+const { consumeEvent } = require('./utils/rabbitmq');
 const { handlePostDeleted } = require('./eventHandlers/media-event-handler');
 
 const app = express();

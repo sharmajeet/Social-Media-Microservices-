@@ -40,4 +40,26 @@ async function publishEvent(routingKey, message) {
     }
 }
 
-module.exports = { connectRabbitMQ , publishEvent };
+async function consumeEvent(routingKey, callback) {
+    try {
+        if (!channel) {
+            await connectRabbitMQ();
+        }
+
+        const q = await channel.assertQueue('', { exclusive: true });
+        await channel.bindQueue(q.queue, EXCHANGE_NAME, routingKey);
+        channel.consume(q.queue, (msg) => {
+            if (msg !== null) {
+                const messageContent = JSON.parse(msg.content.toString());
+                callback(messageContent);
+                channel.ack(msg);
+            }
+        });
+
+        logger.info(`Listening for events with routing key: ${routingKey}`);
+    } catch (error) {
+        logger.error("Failed to consume event", error);
+        throw error;
+    }
+}
+module.exports = { connectRabbitMQ , publishEvent,consumeEvent };
