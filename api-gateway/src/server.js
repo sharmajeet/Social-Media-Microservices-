@@ -29,7 +29,7 @@ app.use(cors());
 
 const rateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minute
-  max: 100, // limit each IP to 5 requests per windowMs
+  max: 10000, // limit each IP to 5 requests per windowMs
   standardHeaders: true,
   legacyHeaders: false,
   handler: (req, res) => {
@@ -139,7 +139,6 @@ app.use(
 );
 
 //setting up proxy for search service
-//setting up proxy for post service
 app.use(
   "/v1/search",
   authenticateRequest,
@@ -160,6 +159,27 @@ app.use(
   })
 );
 
+
+//setting up proxy for Resume-Parser service
+app.use(
+  "/v1/resume-parser",
+  authenticateRequest,
+  proxy(process.env.RESUME_PARSER_SERVICE_URL, {
+    ...proxyOptions,
+    proxyReqOptDecorator: (proxyReqOpts, srcReq) => {
+      proxyReqOpts.headers["Content-Type"] = "application/json";
+      proxyReqOpts.headers["x-user-id"] = srcReq.user.userId;
+      return proxyReqOpts;
+    },
+    userResDecorator: (proxyRes, proxyResData, userReq, userRes) => {
+      logger.info(`Response from Resume-Parser service: ${proxyRes.statusCode}`, {
+        ip: userReq.ip,
+      });
+
+      return proxyResData;
+    },
+  })
+);
 app.use(errorHandler);
 
 app.listen(PORT, () => {
