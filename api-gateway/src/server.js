@@ -162,22 +162,31 @@ app.use(
 
 //setting up proxy for Resume-Parser service
 app.use(
-  "/v1/resume-parser",
+  "/v1/resume",
   authenticateRequest,
-  proxy(process.env.RESUME_PARSER_SERVICE_URL, {
+  proxy(process.env.RESUME_SERVICE_URL, {
     ...proxyOptions,
     proxyReqOptDecorator: (proxyReqOpts, srcReq) => {
-      proxyReqOpts.headers["Content-Type"] = "application/json";
       proxyReqOpts.headers["x-user-id"] = srcReq.user.userId;
+      
+      // FIXED: Better content-type handling (case insensitive)
+      const contentType = srcReq.headers["content-type"] || "";
+      if (!contentType.toLowerCase().startsWith("multipart/form-data")) {
+        proxyReqOpts.headers["Content-Type"] = "application/json";
+      }
+      // For multipart, don't set Content-Type - let the browser handle it
+
       return proxyReqOpts;
     },
     userResDecorator: (proxyRes, proxyResData, userReq, userRes) => {
-      logger.info(`Response from Resume-Parser service: ${proxyRes.statusCode}`, {
-        ip: userReq.ip,
-      });
+      logger.info(
+        `Response received from Resume service: ${proxyRes.statusCode}`
+      );
 
       return proxyResData;
     },
+    parseReqBody: false, // IMPORTANT: Keep false for file uploads
+    limit: '10mb', // ADDED: Set upload limit
   })
 );
 app.use(errorHandler);
@@ -188,5 +197,6 @@ app.listen(PORT, () => {
   logger.info(`Post Service URL: ${process.env.POST_SERVICE_URL}`);
   logger.info(`Media Service URL: ${process.env.MEDIA_SERVICE_URL}`);
   logger.info(`Search Service URL: ${process.env.SEARCH_SERVICE_URL}`);
+  logger.info(`Resume Service URL: ${process.env.RESUME_SERVICE_URL}`);
   logger.info(`Redis URL: ${process.env.REDIS_URL}`);
 });

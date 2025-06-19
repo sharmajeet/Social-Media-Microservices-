@@ -8,7 +8,9 @@ const EXCHANGE_NAME = "post_event";
 
 const connectRabbitMQ = async () => {
     try {
-        connection = await amqp.connect(process.env.RABBITMQ_URL);
+        // const amqpUrl = process.env.RABBITMQ_URL || 'amqp://localhost:5672';
+
+        connection = await amqp.connect(process.env.RABBITMQ_URL || 'amqp://localhost:5672');
         channel = await connection.createChannel();
 
         await channel.assertExchange(EXCHANGE_NAME, "topic", {

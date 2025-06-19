@@ -44,6 +44,8 @@ services:
       - IDENTITY_SERVICE_URL=http://identity-service:3001
       - POST_SERVICE_URL=http://post-service:3002
       - MEDIA_SERVICE_URL=http://media-service:3003
+      - SEARCH_SERVICE_URL=http://search-service:3004
+      - RESUME_SERVICE_URL=http://resume-parser-service:3005
       - REDIS_URL=redis://redis:6379
       - JWT_SECRET=${JWT_SECRET:-your_jwt_secret_here}
     depends_on:
@@ -185,6 +187,27 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
+
+  resume-parser-service:
+    build:
+      context: ./resume-parser-service
+      dockerfile: Dockerfile
+    ports:
+      - "3005:3005"
+    environment:
+      - PORT=3005
+      - NODE_ENV=development
+      - MONGODB_URI=mongodb://host.docker.internal:27017/resume-parser
+      - REDIS_URL=redis://redis:6379
+      - RABBITMQ_URL=amqp://rabbitmq:5672
+    depends_on:
+      - redis
+      - rabbitmq
+    networks:
+      - microservices-network
+    env_file:
+      - ./resume-parser-service/.env
+    restart: unless-stopped
 
   redis:
     image: redis:7-alpine
