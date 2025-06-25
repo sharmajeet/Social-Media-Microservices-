@@ -3,10 +3,10 @@ name: CI/CD Pipeline
 on:
   push:
     branches:
-      - main
+      - Master
   pull_request:
     branches:
-      - main
+      - Master
 
 env:
   DOCKER_COMPOSE_FILE: docker-compose.yml
