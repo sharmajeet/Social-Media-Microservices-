@@ -1,0 +1,111 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+env:
+  DOCKER_COMPOSE_FILE: docker-compose.yml
+  REGISTRY: ghcr.io
+  IMAGE_PREFIX: ${{ github.repository }}
+
+jobs:
+  build-and-validate:
+    runs-on: ubuntu-latest
+
+    services:
+      # Spin up RabbitMQ for validation
+      rabbitmq:
+        image: rabbitmq:3.13-management
+        ports:
+          - 5672:5672
+          - 15672:15672
+        options: >-
+          --health-cmd "rabbitmqctl status"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      # Spin up Redis for validation
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      # Checkout the repository
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Set up Docker Buildx
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Log in to GitHub Container Registry
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Build and validate services
+      - name: Build and validate services
+        run: |
+          # Build all services
+          docker-compose -f ${{ env.DOCKER_COMPOSE_FILE }} build
+
+          # Start services in the background
+          docker-compose -f ${{ env.DOCKER_COMPOSE_FILE }} up -d
+
+          # Wait for services to be healthy
+          docker-compose -f ${{ env.DOCKER_COMPOSE_FILE }} ps
+          sleep 30 # Adjust if services take longer to start
+
+          # Check if services are running
+          docker-compose -f ${{ env.DOCKER_COMPOSE_FILE }} ps --services --filter "status=running" > running_services.txt
+          if [ ! -s running_services.txt ]; then
+            echo "Error: No services are running!"
+            docker-compose -f ${{ env.DOCKER_COMPOSE_FILE }} logs
+            exit 1
+          fi
+
+          # Tear down services
+          docker-compose -f ${{ env.DOCKER_COMPOSE_FILE }} down
+
+      # Push images to GHCR (on main branch)
+      - name: Push images to GHCR
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          # Tag and push each service image
+          docker-compose -f ${{ env.DOCKER_COMPOSE_FILE }} config --services | while read -r service; do
+            image="${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX}}/${service}:latest"
+            docker tag "${service}" "${image}"
+            docker push "${image}"
+          done
+
+  deploy:
+    needs: build-and-validate
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Placeholder: Deploy to target environment
+      - name: Deploy to Server
+        run: |
+          echo "Deploying to target environment (e.g., Kubernetes or cloud server)"
+          # Example for SSH-based deployment:
+          # ssh -i ${{ secrets.SSH_PRIVATE_KEY }} user@host 'cd /path/to/project && docker-compose pull && docker-compose up -d'
+          # Configure secrets and deployment target below
+          echo "Deployment placeholder - implement with your deployment strategy"
