@@ -48,6 +48,16 @@ jobs:
           git clone https://github.com/${{ github.repository }} .
           git checkout ${{ github.sha }}
 
+      # Install Docker Compose
+      - name: Install Docker Compose
+        run: |
+          # Install Docker Compose v2
+          COMPOSE_VERSION=2.29.2
+          curl -SL https://github.com/docker/compose/releases/download/v${COMPOSE_VERSION}/docker-compose-linux-x86_64 -o docker-compose
+          chmod +x docker-compose
+          sudo mv docker-compose /usr/local/bin/docker-compose
+          docker-compose --version
+
       # Install Docker Buildx manually
       - name: Install Docker Buildx
         run: |
