@@ -42,21 +42,28 @@ jobs:
           --health-retries 5
 
     steps:
-      # Checkout the repository
+      # Checkout code using git commands
       - name: Checkout code
-        uses: actions/checkout@v4
+        run: |
+          git clone https://github.com/${{ github.repository }} .
+          git checkout ${{ github.sha }}
 
-      # Set up Docker Buildx
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+      # Install Docker Buildx manually
+      - name: Install Docker Buildx
+        run: |
+          # Install Buildx
+          BUILDX_VERSION=0.17.1
+          curl -LO https://github.com/docker/buildx/releases/download/v${BUILDX_VERSION}/buildx-v${BUILDX_VERSION}.linux-amd64
+          chmod +x buildx-v${BUILDX_VERSION}.linux-amd64
+          sudo mv buildx-v${BUILDX_VERSION}.linux-amd64 /usr/local/bin/docker-buildx
+          # Enable Buildx
+          docker buildx create --use --name mybuilder
+          docker buildx inspect --bootstrap
 
       # Log in to GitHub Container Registry
       - name: Log in to GHCR
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
 
       # Build and validate services
       - name: Build and validate services
@@ -88,7 +95,7 @@ jobs:
         run: |
           # Tag and push each service image
           docker-compose -f ${{ env.DOCKER_COMPOSE_FILE }} config --services | while read -r service; do
-            image="${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX}}/${service}:latest"
+            image="${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${service}:latest"
             docker tag "${service}" "${image}"
             docker push "${image}"
           done
@@ -98,14 +105,22 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
+      # Checkout code using git commands
       - name: Checkout code
-        uses: actions/checkout@v4
+        run: |
+          git clone https://github.com/${{ github.repository }} .
+          git checkout ${{ github.sha }}
 
       # Placeholder: Deploy to target environment
       - name: Deploy to Server
         run: |
           echo "Deploying to target environment (e.g., Kubernetes or cloud server)"
           # Example for SSH-based deployment:
-          # ssh -i ${{ secrets.SSH_PRIVATE_KEY }} user@host 'cd /path/to/project && docker-compose pull && docker-compose up -d'
-          # Configure secrets and deployment target below
+          # echo "${{ secrets.SSH_PRIVATE_KEY }}" > ssh-key.pem
+          # chmod 600 ssh-key.pem
+          # ssh -o StrictHostKeyChecking=no -i ssh-key.pem ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} '
+          #   cd /path/to/project &&
+          #   docker-compose pull &&
+          #   docker-compose up -d
+          # '
           echo "Deployment placeholder - implement with your deployment strategy"
