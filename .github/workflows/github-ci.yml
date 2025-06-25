@@ -17,6 +17,17 @@ jobs:
   build-and-validate:
     runs-on: ubuntu-latest
 
+    services:
+      mongodb:
+        image: mongo:6
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --eval 'db.runCommand({ ping: 1 })'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - name: Checkout code
         run: |
@@ -46,10 +57,13 @@ jobs:
 
       - name: Create .env files for services
         run: |
-          for service in api-gateway identity-service post-service media-service search-service resume-parser-service; do
+          for service in api-gateway identity-service post-service media-service resume-parser-service; do
             echo "Creating empty .env file for ${service}"
             touch ${service}/.env
           done
+          # Create .env file for search-service with MONGO_URI
+          echo "Creating .env file for search-service with MONGO_URI"
+          echo "MONGO_URI=mongodb://mongodb:27017/social-media" > search-service/.env
 
       - name: Build and validate services
         run: |
