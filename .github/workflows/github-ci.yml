@@ -9,7 +9,7 @@ on:
       - Master
 
 env:
-  DOCKER_COMPOSE_FILE: docker-compose.yaml
+  DOCKER_COMPOSE_FILE: docker-compose.yml
   REGISTRY: ghcr.io
   IMAGE_PREFIX: ${{ github.repository }}
 
