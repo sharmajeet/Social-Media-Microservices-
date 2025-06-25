@@ -66,27 +66,34 @@ jobs:
         run: |
           echo "${{ secrets.GITHUB_TOKEN }}" | docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
 
+      - name: Create .env files for services
+        run: |
+          for service in api-gateway identity-service post-service media-service search-service resume-parser-service; do
+            echo "Creating empty .env file for ${service}"
+            touch ${service}/.env
+          done
+
       - name: Build and validate services
         run: |
-          # Build all services
-          docker-compose -f ${{ env.DOCKER_COMPOSE_FILE }} build
-
-          # Fix npm vulnerabilities for custom services
+          # Update npm and fix vulnerabilities for custom services
           for service in api-gateway identity-service post-service media-service search-service resume-parser-service; do
             if [ -d "${service}" ]; then
-              echo "Running npm audit fix for ${service}"
-              docker run --rm -v $(pwd)/${service}:/usr/src/app -w /usr/src/app node:18-alpine npm audit fix || true
+              echo "Updating npm and running audit fix for ${service}"
+              docker run --rm -v $(pwd)/${service}:/usr/src/app -w /usr/src/app node:18-alpine sh -c "npm install -g npm@11.4.2 && npm audit fix || true"
             fi
           done
+
+          # Build all services
+          docker-compose -f ${{ env.DOCKER_COMPOSE_FILE }} build
 
           # Start services in the background
           docker-compose -f ${{ env.DOCKER_COMPOSE_FILE }} up -d
 
-          # Wait for services to be healthy
+          # Wait for services to be running or healthy
           for service in $(docker-compose -f ${{ env.DOCKER_COMPOSE_FILE }} config --services); do
-            echo "Waiting for ${service} to be healthy..."
+            echo "Waiting for ${service} to be ready..."
             timeout 120s bash -c "until docker inspect \$(docker-compose -f ${{ env.DOCKER_COMPOSE_FILE }} ps -q ${service}) | grep -q '\"Status\": \"healthy\"' || [ \"\$(docker inspect \$(docker-compose -f ${{ env.DOCKER_COMPOSE_FILE }} ps -q ${service}) | grep '\"Status\":' | awk '{print \$2}' | tr -d '\"')\" = \"running\" ]; do sleep 5; done" || {
-              echo "Service ${service} failed to become healthy!"
+              echo "Service ${service} failed to become ready!"
               docker-compose -f ${{ env.DOCKER_COMPOSE_FILE }} logs ${service}
               exit 1
             }
