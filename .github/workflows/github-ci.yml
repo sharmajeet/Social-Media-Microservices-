@@ -84,9 +84,10 @@ jobs:
           # Wait for services to be running or healthy
           for service in $(docker-compose -f ${{ env.DOCKER_COMPOSE_FILE }} config --services); do
             echo "Waiting for ${service} to be ready..."
-            timeout 120s bash -c "until docker inspect \$(docker-compose -f ${{ env.DOCKER_COMPOSE_FILE }} ps -q ${service}) | grep -q '\"Status\": \"healthy\"' || [ \"\$(docker inspect \$(docker-compose -f ${{ env.DOCKER_COMPOSE_FILE }} ps -q ${service}) | grep '\"Status\":' | awk '{print \$2}' | tr -d '\"')\" = \"running\" ]; do sleep 5; done" || {
+            timeout 180s bash -c "until docker inspect \$(docker-compose -f ${{ env.DOCKER_COMPOSE_FILE }} ps -q ${service}) | grep -q '\"Status\": \"healthy\"' || docker inspect \$(docker-compose -f ${{ env.DOCKER_COMPOSE_FILE }} ps -q ${service}) | grep -q '\"Status\": \"running\"'; do sleep 5; echo \"Checking ${service} status...\"; docker inspect \$(docker-compose -f ${{ env.DOCKER_COMPOSE_FILE }} ps -q ${service}) --format '{{.State.Status}}'; done" || {
               echo "Service ${service} failed to become ready!"
               docker-compose -f ${{ env.DOCKER_COMPOSE_FILE }} logs ${service}
+              docker inspect \$(docker-compose -f ${{ env.DOCKER_COMPOSE_FILE }} ps -q ${service})
               exit 1
             }
           done
